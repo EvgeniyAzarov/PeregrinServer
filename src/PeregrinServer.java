@@ -5,32 +5,34 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class PeregrinServer {
-    private static ServerSocket server;
-
-    private static int port = 9875;
 
     public static void main(String args[]) throws IOException, ClassNotFoundException {
 
-        server = new ServerSocket(port);
+        final int port = 9875;
+        ServerSocket server = new ServerSocket(port);
+
+        String buffer = "";
+
         //keep listens indefinitely until receives 'exit' call or program terminates
         while (true) {
-            System.out.println("Waiting for client request");
-
             Socket socket = server.accept();
 
-            InputStream ois = socket.getInputStream();
+            InputStream inputStream = socket.getInputStream();
 
             byte[] message = new byte[1024];
 
-            ois.read(message);
-            System.out.println("Message Received: " + new String(clearEmptyCell(message)));
+            if (inputStream.read(message) != -1) {
+                System.out.println("Message Received: " + new String(clearEmptyCell(message)));
+                buffer = new String(clearEmptyCell(message));
+            }
 
-            OutputStream oos = socket.getOutputStream();
+            OutputStream outputStream = socket.getOutputStream();
 
-            oos.write(message);
+            if (!buffer.equals(""))
+                outputStream.write(buffer.getBytes());
 
-            ois.close();
-//            oos.close();
+            outputStream.close();
+            inputStream.close();
             socket.close();
 
             if (new String(clearEmptyCell(message)).equals("exit")) break;
@@ -43,7 +45,7 @@ public class PeregrinServer {
 
     private static byte[] clearEmptyCell(byte[] arr) {
         int length = 0;
-        for (byte arrE : arr) {
+        for (byte ignored : arr) {
             if (arr[length] == 0) break;
             else length++;
         }
