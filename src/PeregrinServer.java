@@ -1,6 +1,5 @@
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -11,49 +10,30 @@ public class PeregrinServer {
         final int port = 9875;
         ServerSocket server = new ServerSocket(port);
 
-        String buffer = "";
+        String buffer = "hello";
 
         //keep listens indefinitely until receives 'exit' call or program terminates
         while (true) {
             Socket socket = server.accept();
 
-            InputStream inputStream = socket.getInputStream();
-
-            byte[] message = new byte[1024];
-
-            if (inputStream.read(message) != -1) {
-                System.out.println("Message Received: " + new String(clearEmptyCell(message)));
-                buffer = new String(clearEmptyCell(message));
-            }
-
-            OutputStream outputStream = socket.getOutputStream();
-
-            if (!buffer.equals(""))
-                outputStream.write(buffer.getBytes());
-
-            outputStream.close();
+            ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+            String message = (String) inputStream.readObject();
+            System.out.println("Message Received: " + message);
+            buffer = message;
             inputStream.close();
+
+
+//            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+//            outputStream.writeObject(buffer);
+//            outputStream.close();
+
             socket.close();
 
-            if (new String(clearEmptyCell(message)).equals("exit")) break;
+            if (message.equals("exit")) break;
         }
 
         System.out.println("Shutting down Socket server!!");
 
         server.close();
-    }
-
-    private static byte[] clearEmptyCell(byte[] arr) {
-        int length = 0;
-        for (byte ignored : arr) {
-            if (arr[length] == 0) break;
-            else length++;
-        }
-
-        byte[] result = new byte[length];
-
-        System.arraycopy(arr, 0, result, 0, length);
-
-        return result;
     }
 }
