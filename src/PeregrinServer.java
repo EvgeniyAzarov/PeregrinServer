@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -10,23 +11,24 @@ public class PeregrinServer {
         final int port = 9875;
         ServerSocket server = new ServerSocket(port);
 
-        String buffer = "hello";
+        ObjectInputStream inputStream;
+        ObjectOutputStream outputStream;
 
-        //keep listens indefinitely until receives 'exit' call or program terminates
+        String buffer = "";
+
         while (true) {
             Socket socket = server.accept();
 
-            ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+            inputStream = new ObjectInputStream(socket.getInputStream());
             String message = (String) inputStream.readObject();
             System.out.println("Message Received: " + message);
             buffer = message;
+
+            outputStream = new ObjectOutputStream(socket.getOutputStream());
+            outputStream.writeObject(buffer);
+
             inputStream.close();
-
-
-//            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
-//            outputStream.writeObject(buffer);
-//            outputStream.close();
-
+            outputStream.close();
             socket.close();
 
             if (message.equals("exit")) break;
