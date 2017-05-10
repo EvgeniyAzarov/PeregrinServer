@@ -30,7 +30,7 @@ public class RequestHandler extends Thread {
             PreparedStatement statement;
 
             switch (request[0]) {
-                case "USER_REGISTRATION":
+                case "USER_REGISTRATION": {
 
                     statement = connection.prepareStatement(
                             "SELECT * FROM users WHERE login = ?"
@@ -57,12 +57,28 @@ public class RequestHandler extends Thread {
                     }
 
                     break;
+                }
 
-                case "USER_ENTER":
-                    //TODO "USER_ENTER" request handler
+                case "USER_ENTER": {
+                    statement = connection.prepareStatement(
+                            "SELECT * FROM users WHERE login = ?"
+                    );
+
+                    statement.setString(1, request[1]);
+
+                    ResultSet user = statement.executeQuery();
+
+                    if (user.next() && user.getString("password").equals(request[2])) {
+                        outputStream.writeBoolean(true);
+                        outputStream.writeObject(user.getString("nickname"));
+                    } else {
+                        outputStream.writeBoolean(false);
+                    }
+
                     break;
+                }
 
-                case "POST_MESSAGE":
+                case "POST_MESSAGE": {
 
                     statement = connection.prepareStatement(
                             "INSERT INTO messages VALUES (?, ?, ?, '0')"
@@ -75,16 +91,17 @@ public class RequestHandler extends Thread {
                     statement.executeUpdate();
 
                     break;
+                }
 
-                case "GET_MESSAGES":
+                case "GET_MESSAGES": {
 
                     PreparedStatement updateStatement = connection.prepareStatement(
-                        "UPDATE messages " +
-                                "SET received = '1' " +
-                                "WHERE recipient_login = ? and received = '0'");
+                            "UPDATE messages " +
+                                    "SET received = '1' " +
+                                    "WHERE recipient_login = ? and received = '0'");
                     updateStatement.setString(1, request[1]);
 
-                    PreparedStatement selectStatement  = connection.prepareStatement(
+                    PreparedStatement selectStatement = connection.prepareStatement(
                             "SELECT * FROM messages WHERE recipient_login = ? and received = '1'"
                     );
                     selectStatement.setString(1, request[1]);
@@ -117,10 +134,11 @@ public class RequestHandler extends Thread {
                     statement.execute();
 
                     break;
+                }
             }
 
-        } catch (IOException | ClassNotFoundException | SQLException ignored) {
-            ignored.printStackTrace();
+        } catch (IOException | ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
         }
     }
 }
