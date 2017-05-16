@@ -6,7 +6,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 
 public class RequestHandler extends Thread {
 
@@ -78,6 +77,22 @@ public class RequestHandler extends Thread {
                     break;
                 }
 
+                case "FIND_USER": {
+                    statement = connection.prepareStatement(
+                            "SELECT * FROM users WHERE login = ?"
+                    );
+                    statement.setString(1, request[1]);
+
+                    ResultSet users = statement.executeQuery();
+
+                    if (users.next()) {
+                        outputStream.writeBoolean(true);
+                        outputStream.writeObject(users.getString("nickname"));
+                    } else {
+                        outputStream.writeBoolean(false);
+                    }
+                }
+
                 case "POST_MESSAGE": {
 
                     statement = connection.prepareStatement(
@@ -115,16 +130,7 @@ public class RequestHandler extends Thread {
 
                     } while (!messages.next());
 
-                    ArrayList<String>[] response = new ArrayList[2];
-                    response[0] = new ArrayList<>();
-                    response[1] = new ArrayList<>();
-
-                    do {
-                        response[0].add(messages.getString("content"));
-                        response[1].add(messages.getString("sender_login"));
-                    } while (messages.next());
-
-                    outputStream.writeObject(response);
+                    outputStream.writeObject(messages);
 
                     statement = connection.prepareStatement(
                             "DELETE FROM messages WHERE recipient_login = ? and received = '1'"
