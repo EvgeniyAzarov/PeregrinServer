@@ -47,7 +47,7 @@ public class RequestHandler extends Thread {
                         );
 
                         statement.setString(1, request[1]);
-                        statement.setString(2, request[2]);
+                        statement.setString(2, BCrypt.hashpw(request[2], BCrypt.gensalt(5)));
                         statement.setString(3, request[3]);
 
                         statement.executeUpdate();
@@ -67,7 +67,7 @@ public class RequestHandler extends Thread {
 
                     ResultSet user = statement.executeQuery();
 
-                    if (user.next() && user.getString("password").equals(request[2])) {
+                    if (user.next() && BCrypt.checkpw(request[2], user.getString("password"))) {
                         outputStream.writeBoolean(true);
                         outputStream.writeObject(user.getString("nickname"));
                     } else {
@@ -91,6 +91,8 @@ public class RequestHandler extends Thread {
                     } else {
                         outputStream.writeBoolean(false);
                     }
+
+                    break;
                 }
 
                 case "POST_MESSAGE": {
@@ -132,9 +134,19 @@ public class RequestHandler extends Thread {
 
                     outputStream.writeObject(messages);
 
-                    statement = connection.prepareStatement(
-                            "DELETE FROM messages WHERE recipient_login = ? and received = '1'"
-                    );
+                    try {
+                        inputStream.readBoolean();
+                        statement = connection.prepareStatement(
+                                "DELETE FROM messages WHERE recipient_login = ? and received = '1'"
+                        );
+                    } catch (IOException e) {
+                        statement = connection.prepareStatement(
+                                "UPDATE messages " +
+                                        "SET received = '0' " +
+                                        "WHERE recipient_login = ? and received = '1'"
+                        );
+                    }
+
                     statement.setString(1, request[1]);
 
                     statement.execute();
