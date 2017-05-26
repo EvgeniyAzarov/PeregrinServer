@@ -6,8 +6,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
-public class RequestHandler extends Thread {
+public class RequestHandler implements Runnable {
 
     private final Socket socket;
 
@@ -118,6 +120,8 @@ public class RequestHandler extends Thread {
                                     "WHERE recipient_login = ? and received = '0'");
                     updateStatement.setString(1, request[1]);
 
+                    updateStatement.executeUpdate();
+
                     PreparedStatement selectStatement = connection.prepareStatement(
                             "SELECT * FROM messages WHERE recipient_login = ? and received = '1'"
                     );
@@ -132,20 +136,26 @@ public class RequestHandler extends Thread {
 
                     } while (!messages.next());
 
-                    outputStream.writeObject(messages);
+                    ArrayList<HashMap<String, String>> messagesSendReady = new ArrayList<>();
 
-                    try {
-                        inputStream.readBoolean();
-                        statement = connection.prepareStatement(
-                                "DELETE FROM messages WHERE recipient_login = ? and received = '1'"
-                        );
-                    } catch (IOException e) {
-                        statement = connection.prepareStatement(
-                                "UPDATE messages " +
-                                        "SET received = '0' " +
-                                        "WHERE recipient_login = ? and received = '1'"
-                        );
-                    }
+                    do {
+                        HashMap<String, String> message = new HashMap<>();
+
+                        message.put("sender_login", messages.getString("sender_login"));
+
+                        message.put("recipient_login", messages.getString("recipient_login"));
+
+                        message.put("content", messages.getString("content"));
+
+                        messagesSendReady.add(message);
+
+                    } while (messages.next());
+
+                    outputStream.writeObject(messagesSendReady);
+
+                    statement = connection.prepareStatement(
+                            "DELETE FROM messages WHERE recipient_login = ? and received = '1'"
+                    );
 
                     statement.setString(1, request[1]);
 

@@ -1,36 +1,47 @@
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Main {
 
-    public static void main(String args[]) throws IOException, SQLException {
+    private static final int port = 9875;
+    private static ServerSocket server;
+    private static ExecutorService pool;
 
-        final int port = 9875;
-        ServerSocket server = new ServerSocket(port);
+    public static void main(String args[]) throws SQLException, IOException {
 
+        server = new ServerSocket(port);
+        pool = Executors.newCachedThreadPool();
+
+        runServer();
+    }
+
+    private static void runServer() {
         Connection connection = connect();
 
         while (true) {
-            Socket socket = server.accept();
-
             while (connection == null) {
                 connection = connect();
             }
 
-            RequestHandler requestHandler = new RequestHandler(socket, connection);
-
-            requestHandler.start();
+            try {
+                pool.execute(new RequestHandler(server.accept(), connection));
+            } catch (IOException e) {
+                pool.shutdown();
+            }
         }
     }
 
     private static Connection connect () {
         Connection connection = null;
+
+        System.out.print("Connect to DB...  ");
 
         try {
             Driver driver = new com.mysql.jdbc.Driver();
@@ -50,7 +61,7 @@ public class Main {
                     connectInfo
             );
 
-            System.out.println("Подключено к базе данных peregrin");
+            System.out.println("Done.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
