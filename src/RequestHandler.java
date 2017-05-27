@@ -151,8 +151,6 @@ public class RequestHandler implements Runnable {
 
                     } while (messages.next());
 
-                    outputStream.writeObject(messagesSendReady);
-
                     statement = connection.prepareStatement(
                             "DELETE FROM messages WHERE recipient_login = ? and received = '1'"
                     );
@@ -160,6 +158,8 @@ public class RequestHandler implements Runnable {
                     statement.setString(1, request[1]);
 
                     statement.execute();
+
+                    outputStream.writeObject(messagesSendReady);
 
                     break;
                 }
