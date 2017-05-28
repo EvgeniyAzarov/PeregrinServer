@@ -88,6 +88,16 @@ public class RequestHandler implements Runnable {
                     ResultSet users = statement.executeQuery();
 
                     if (users.next()) {
+
+                        statement = connection.prepareStatement(
+                                "INSERT INTO messages VALUES (?, ?, ?, '0')"
+                        );
+                        statement.setString(1, request[1]);
+                        statement.setString(2, request[2]);
+                        statement.setString(3, "Chat with " + request[1]);
+
+                        statement.executeUpdate();
+
                         outputStream.writeBoolean(true);
                         outputStream.writeObject(users.getString("nickname"));
                     } else {
@@ -134,6 +144,8 @@ public class RequestHandler implements Runnable {
 
                         messages = selectStatement.executeQuery();
 
+                        Thread.sleep(100);
+
                     } while (!messages.next());
 
                     ArrayList<HashMap<String, String>> messagesSendReady = new ArrayList<>();
@@ -176,7 +188,7 @@ public class RequestHandler implements Runnable {
                 }
             }
 
-        } catch (IOException | ClassNotFoundException | SQLException e) {
+        } catch (IOException | ClassNotFoundException | SQLException | InterruptedException e) {
             e.printStackTrace();
         }
     }
