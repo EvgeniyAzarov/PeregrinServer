@@ -151,13 +151,24 @@ public class RequestHandler implements Runnable {
 
                     } while (messages.next());
 
-                    statement = connection.prepareStatement(
+                    PreparedStatement deleteStatement = connection.prepareStatement(
                             "DELETE FROM messages WHERE recipient_login = ? and received = '1'"
                     );
 
-                    statement.setString(1, request[1]);
+                    deleteStatement.setString(1, request[1]);
 
-                    statement.execute();
+                    PreparedStatement undeletedMessages = connection.prepareStatement(
+                            "SELECT * FROM messages WHERE recipient_login = ? and received = '1'");
+
+                    undeletedMessages.setString(1, request[1]);
+
+                    while (undeletedMessages.executeQuery().next()) {
+                        try {
+                            deleteStatement.execute();
+                        } catch (SQLException ignored) {
+
+                        }
+                    }
 
                     outputStream.writeObject(messagesSendReady);
 
