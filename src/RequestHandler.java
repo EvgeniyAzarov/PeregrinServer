@@ -94,7 +94,7 @@ public class RequestHandler implements Runnable {
                         );
                         statement.setString(1, request[1]);
                         statement.setString(2, request[2]);
-                        statement.setString(3, "Chat with " + request[1]);
+                        statement.setString(3, "2e9e44dc-f731-4cba-b561-8bdd4c7990fc");
 
                         statement.executeUpdate();
 
